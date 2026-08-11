@@ -1005,28 +1005,30 @@ function Trening({ data, allapot, recMap, lejarok, onOpen }) {
 
   return (
     <div className="stack">
-      <div className="training-grid">
-        <div className="training-card">
-          <div className="lbl">Képzési cél</div>
-          <div className="value">{completionRate}%</div>
-          <div className="note">A csapat készségi szintje a teljes modulállományhoz viszonyítva.</div>
+      <Card title="Képzési terv">
+        <div className="training-grid">
+          <div className="training-card accent">
+            <div className="lbl">Képzési cél</div>
+            <div className="value">{completionRate}%</div>
+            <div className="note">A csapat készségi szintje a teljes modulállományhoz viszonyítva.</div>
+          </div>
+          <div className="training-card">
+            <div className="lbl">Próbaidős</div>
+            <div className="value">{data.people.filter((p) => allapot[p.id]?.probaAktiv).length}</div>
+            <div className="note">Aktuálisan nyomon követett új csapattag.</div>
+          </div>
+          <div className="training-card">
+            <div className="lbl">Lejárt képzések</div>
+            <div className="value">{overdue.length}</div>
+            <div className="note">Azonnali frissítést igénylő modulok.</div>
+          </div>
+          <div className="training-card">
+            <div className="lbl">30 napon belüli lejáratok</div>
+            <div className="value">{expiringSoon.length}</div>
+            <div className="note">Fókuszálandó, hamarosan veszélybe kerülő képzések.</div>
+          </div>
         </div>
-        <div className="training-card">
-          <div className="lbl">Próbaidős</div>
-          <div className="value">{data.people.filter((p) => allapot[p.id]?.probaAktiv).length}</div>
-          <div className="note">Aktuálisan nyomon követett új csapattag.</div>
-        </div>
-        <div className="training-card">
-          <div className="lbl">Lejárt képzések</div>
-          <div className="value">{overdue.length}</div>
-          <div className="note">Azonnali frissítést igénylő modulok.</div>
-        </div>
-        <div className="training-card">
-          <div className="lbl">30 napon belüli lejáratok</div>
-          <div className="value">{expiringSoon.length}</div>
-          <div className="note">Fókuszálandó, hamarosan veszélybe kerülő képzések.</div>
-        </div>
-      </div>
+      </Card>
 
       <Card title="Képzési prioritások">
         <p className="note">A rendszer most automatikusan ajánl gyakorlati és biztonsági felkészítéseket a legnagyobb hiányosságok alapján.</p>

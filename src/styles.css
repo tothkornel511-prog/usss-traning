@@ -149,8 +149,9 @@
   .usss .input{background:#fff;border-color:#999}
 }
 .usss .diamond.off{background:var(--line)}
-.usss .training-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));background:rgba(255,255,255,.02);padding:12px;border-radius:26px;border:1px solid rgba(255,255,255,.08);}
-.usss .training-card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:26px;padding:24px;min-height:160px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 28px 72px -46px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.08);}
+.usss .training-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));background:rgba(255,255,255,.01);padding:16px;border-radius:28px;border:1px solid rgba(255,255,255,.05);}
+.usss .training-card{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.08);border-radius:28px;padding:24px;min-height:160px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 28px 80px -50px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.08);}
+.usss .training-card.accent{background:linear-gradient(180deg,rgba(201,162,39,.16),rgba(201,162,39,.06));border-color:rgba(201,162,39,.2);}
 .usss .training-card .lbl{font-family:'Marcellus',Georgia,serif;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
 .usss .training-card .value{font-size:2.6rem;line-height:1;margin:0;color:var(--gold);font-weight:700}
 .usss .training-card .note{margin-top:14px;color:var(--mut);font-size:13px;line-height:1.6}
