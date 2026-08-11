@@ -5,7 +5,74 @@ import face2 from './assets/ai-face-2.svg';
 import face3 from './assets/ai-face-3.svg';
 
 const STORE_KEY = 'usss:kepzes:v2';
+const SETTINGS_KEY = 'usss:ui:v1';
 const PROBAIDO_NAP = 14;
+
+const UI_DEFAULTS = {
+  theme: 'gold',
+  imageMode: 'face1',
+  layout: 'wide',
+  accent: 'gold',
+};
+
+const THEME_STYLES = {
+  gold: {
+    '--ink': '#06080B',
+    '--panel': '#0B0F15',
+    '--panel2': '#10151D',
+    '--raise': '#141A23',
+    '--line': '#1D2531',
+    '--hair': '#161C25',
+    '--txt': '#E9ECF1',
+    '--mut': '#8B95A7',
+    '--faint': '#5A6373',
+    '--gold': '#C9A227',
+    '--gold-lt': '#E8CE7A',
+    '--gold-dk': '#8A6F1B',
+    '--ok': '#46BC8B',
+    '--info': '#5AA9E6',
+    '--bad': '#D6455D',
+    '--warn': '#E0A13A',
+  },
+  steel: {
+    '--ink': '#05070A',
+    '--panel': '#0D1117',
+    '--panel2': '#131A23',
+    '--raise': '#171F2A',
+    '--line': '#232B38',
+    '--hair': '#17212C',
+    '--txt': '#E5F0FF',
+    '--mut': '#8392A6',
+    '--faint': '#5D6B7D',
+    '--gold': '#6BC7FF',
+    '--gold-lt': '#A5E5FF',
+    '--gold-dk': '#3C8DC7',
+    '--ok': '#63E2B7',
+    '--info': '#7AA3FF',
+    '--bad': '#F16F97',
+    '--warn': '#E0A13A',
+  },
+  forest: {
+    '--ink': '#08120D',
+    '--panel': '#0D1811',
+    '--panel2': '#141F18',
+    '--raise': '#17291C',
+    '--line': '#1F2D22',
+    '--hair': '#122015',
+    '--txt': '#E8F0E9',
+    '--mut': '#8B9A8F',
+    '--faint': '#5E6A60',
+    '--gold': '#8ABE58',
+    '--gold-lt': '#BBDD84',
+    '--gold-dk': '#6A8C32',
+    '--ok': '#52C68A',
+    '--info': '#6BB6BE',
+    '--bad': '#D6455D',
+    '--warn': '#C2A33A',
+  },
+};
+
+const IMAGE_MODES = ['face1', 'face2', 'face3'];
 
 const SZINTEK = [
   {
@@ -136,6 +203,10 @@ const KEZDETI = {
   records: [],
 };
 
+const FULL_ROSTER_IDS = new Set(KEZDETI.people.map((p) => p.id));
+
+const isFullRoster = (people) => Array.isArray(people) && people.length === KEZDETI.people.length && people.every((p) => FULL_ROSTER_IDS.has(p.id));
+
 const uid = () => Math.random().toString(36).slice(2, 10);
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const fmt = (iso) => (iso ? iso.replace(/-/g, '.') + '.' : '—');
@@ -226,6 +297,7 @@ function Rail({ elert }) {
 
 export default function App() {
   const [data, setData] = useState(KEZDETI);
+  const [ui, setUi] = useState(UI_DEFAULTS);
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(null);
   const [tab, setTab] = useState('attekintes');
@@ -237,9 +309,24 @@ export default function App() {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
       try {
-        setData({ ...EMPTY, ...JSON.parse(raw) });
+        const parsed = { ...EMPTY, ...JSON.parse(raw) };
+        if (!isFullRoster(parsed.people)) {
+          localStorage.setItem(STORE_KEY, JSON.stringify(KEZDETI));
+          setData(KEZDETI);
+        } else {
+          setData(parsed);
+        }
       } catch (error) {
         console.warn('Nem sikerült betölteni az adatokat:', error);
+        setData(KEZDETI);
+      }
+    }
+    const rawUi = localStorage.getItem(SETTINGS_KEY);
+    if (rawUi) {
+      try {
+        setUi((prev) => ({ ...prev, ...JSON.parse(rawUi) }));
+      } catch (error) {
+        console.warn('Nem sikerült betölteni az UI-beállításokat:', error);
       }
     }
     setLoaded(true);
@@ -251,6 +338,13 @@ export default function App() {
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
     setSaved(new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   }, [data, loaded]);
+
+  useEffect(() => {
+    Object.entries(THEME_STYLES[ui.theme] || THEME_STYLES.gold).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(ui));
+  }, [ui]);
 
   const recMap = useMemo(() => {
     const m = {};
@@ -332,6 +426,7 @@ export default function App() {
     ['modulok', 'Modulok'],
     ['jelentes', 'Jelentések'],
     ['vedett', 'Védett helyek'],
+    ['settings', 'Beállítások'],
     ['sugo', 'Súgó'],
   ];
   const aktiv = modal?.type === 'kartya' ? data.people.find((p) => p.id === modal.id) : null;
@@ -420,8 +515,9 @@ export default function App() {
         )}
         {tab === 'tabla' && <Tabla data={data} allapot={allapot} recMap={recMap} onCell={setRecord} onOpen={nyit} />}
         {tab === 'modulok' && <ModulLista data={data} recMap={recMap} onErveny={setErveny} />}
-        {tab === 'jelentes' && <Jelentes csv={csv} onCopy={copyCsv} onDownload={downloadCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
-        {tab === 'vedett' && <Vedett sites={VEDETT_HELYEK} />}
+        {tab === 'jelentes' && <Jelentes data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} csv={csv} onCopy={copyCsv} onDownload={downloadCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
+        {tab === 'vedett' && <Vedett sites={VEDETT_HELYEK} imageMode={ui.imageMode} />}
+        {tab === 'settings' && <Settings ui={ui} onChange={setUi} />}
         {tab === 'sugo' && <Sugo />}
       </main>
 
@@ -800,29 +896,189 @@ function ModulLista({ data, recMap, onErveny }) {
   );
 }
 
-function Jelentes({ csv, onCopy, onDownload, onReset, onDemo }) {
+function Jelentes({ data, allapot, recMap, lejarok, csv, onCopy, onDownload, onReset, onDemo }) {
+  const totalPeople = data.people.length;
+  const totalModules = MODULOK.length;
+  const completedSlots = data.records.filter((r) => r.statusz === 'kesz' && !r.lejart).length;
+  const totalSlots = totalPeople * totalModules;
+  const completionRate = totalSlots > 0 ? Math.round((completedSlots / totalSlots) * 100) : 0;
+  const probationCount = data.people.filter((p) => allapot[p.id]?.probaAktiv).length;
+  const expiringSoon = lejarok.filter((r) => r.hatra !== null && r.hatra > 0 && r.hatra <= 30);
+  const expired = lejarok.filter((r) => r.lejart);
+  const topPerformers = [...data.people]
+    .map((p) => ({ person: p, score: allapot[p.id]?.osszKesz ?? 0, level: allapot[p.id]?.elert ?? -1 }))
+    .sort((a, b) => b.score - a.score || a.person.nev.localeCompare(b.person.nev, 'hu'))
+    .slice(0, 3);
+
+  const reportNarrative = `USSS Oktatási jelentés
+Dátum: ${new Date().toLocaleDateString('hu-HU')}
+
+Összesen ${totalPeople} fő szerepel az állományban.
+A jelenlegi képzési fedezet ${completionRate}%: ${completedSlots}/${totalSlots} teljesített modul.
+${probationCount > 0 ? `${probationCount} fő még próbaidőn van.` : 'Nincs aktív próbaidős személy.'}
+${expiringSoon.length > 0 ? `${expiringSoon.length} modul lejár 30 napon belül.` : 'Nincs 30 napon belüli lejárat.'}
+${expired.length > 0 ? `${expired.length} modul már lejárt és azonnali frissítést igényel.` : 'Nincs lejárt modul.'}
+
+Top teljesítők:
+${topPerformers.map((item, index) => `${index + 1}. ${item.person.nev} — ${item.score} modul`).join('\n')}
+
+Javasolt intézkedések:
+- Ellenőrizd a 30 napon belül lejáró modulokat.
+- Frissítsd a lejárt státusszal rendelkező képzéseket mielőbb.
+- Kiemelten figyeld a próbaidőn lévő személyeket a következő éles feladatokra.`;
+
+  const copyReportText = async () => {
+    try {
+      await navigator.clipboard.writeText(reportNarrative);
+      alert('A jelentésszöveg kimásolva.');
+    } catch (error) {
+      alert('Nem sikerült kimásolni a jelentést.');
+    }
+  };
+
+  const printReport = () => window.print();
+
   return (
     <div className="stack">
-      <Card title="Oktatási jegyzőkönyv és jelentés export">
-        <p className="note">A kimutatás személyenként adja vissza a teljesítést, lejáratokat és az érvényességi státuszt. Használd Excelben vagy riportként.</p>
+      <div className="report-grid">
+        <div className="report-card">
+          <div className="lbl">Állomány</div>
+          <div className="value">{totalPeople}</div>
+          <div className="note">Aktív képzési státusz nyilvántartás</div>
+        </div>
+        <div className="report-card">
+          <div className="lbl">Teljesített modulok</div>
+          <div className="value">{completedSlots}</div>
+          <div className="note">Érvényes megírt modulok száma</div>
+        </div>
+        <div className="report-card">
+          <div className="lbl">Jelentés fókusz</div>
+          <div className="value">{completionRate}%</div>
+          <div className="note">Csapat prioritása a teljes képzés felé</div>
+        </div>
+        <div className="report-card">
+          <div className="lbl">Lejáró képzések</div>
+          <div className="value">{expiringSoon.length}</div>
+          <div className="note">30 napon belül lejáró modulok</div>
+        </div>
+      </div>
+
+      <Card title="Oktatási jelentés és export">
+        <p className="note">Mostantól ez a fül valódi, gyorsan használható riportot ad. A CSV mellett szöveges és nyomtatási formátumban is elérhető.</p>
         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
           <Btn kind="gold" onClick={onCopy}>CSV másolása</Btn>
           <Btn onClick={onDownload}>CSV letöltése</Btn>
-          <Btn kind="quiet" onClick={onDemo}>Példaállomány betöltése</Btn>
-          <Btn kind="bad" onClick={onReset}>Teljes állomány törlése</Btn>
+          <Btn kind="gold" onClick={copyReportText}>Összefoglaló kimásolása</Btn>
+          <Btn kind="quiet" onClick={printReport}>Nyomtatás</Btn>
+          <Btn kind="quiet" onClick={onDemo}>Példaállomány</Btn>
+          <Btn kind="bad" onClick={onReset}>Teljes törlés</Btn>
         </div>
       </Card>
-      <Card title="CSV adatforrás">
-        <textarea readOnly rows="10" className="input mono" style={{ marginTop: 14, fontSize: 11, minHeight: 250 }} value={csv} />
+
+      <div className="grid2">
+        <Card title="Jelentés pillanatkép">
+          <ul className="list">
+            <li>
+              <div className="lbl">Teljes modulállomány</div>
+              <p className="note">{totalSlots} elméleti modulhely van kiosztva a csapat számára.</p>
+            </li>
+            <li>
+              <div className="lbl">Kész státusz</div>
+              <p className="note">{completionRate}% az összes modul közül.</p>
+            </li>
+            <li>
+              <div className="lbl">Próbaidős személyek</div>
+              <p className="note">{probationCount} fő van még monitorozás alatt.</p>
+            </li>
+            <li>
+              <div className="lbl">Lejárt modulok</div>
+              <p className="note">{expired.length} aktív figyelmeztetés.</p>
+            </li>
+          </ul>
+        </Card>
+        <Card title="Figyelmeztetések">
+          {expiringSoon.length > 0 ? (
+            <ul className="list">
+              {expiringSoon.slice(0, 6).map((r) => (
+                <li key={r.id} className="spread">
+                  <span>{r.ember.nev} · {r.kod}</span>
+                  <Chip szin="var(--warn)">{r.hatra} nap</Chip>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="note">Nincs 30 napon belüli lejáró modul.</p>
+          )}
+        </Card>
+      </div>
+
+      <Card title="Automatikus jelentésszöveg">
+        <textarea readOnly rows="10" className="input mono" style={{ marginTop: 14, fontSize: 11, minHeight: 240 }} value={reportNarrative} />
       </Card>
-      <Card title="GitHub és dokumentáció">
-        <p className="note">A projekt lokálisan tárolja az adatokat, és a `src/App.jsx` alapján bővíthető egyedi jelentésekkel és oktatási jegyzőkönyvekkel.</p>
+
+      <Card title="Top teljesítők">
+        <ul className="list">
+          {topPerformers.map((item, index) => (
+            <li key={item.person.id} className="spread" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <div className="lbl">{index + 1}. {item.person.nev}</div>
+                <p className="note">{item.score} elismert modul · {item.level >= 0 ? KOTELEZO_SZINTEK[item.level].rang : 'Nincs szint'}.</p>
+              </div>
+              <span className="mono" style={{ color: 'var(--gold-lt)', marginTop: 4 }}>{item.score} modul</span>
+            </li>
+          ))}
+        </ul>
       </Card>
     </div>
   );
 }
 
-function Vedett({ sites }) {
+function Settings({ ui, onChange }) {
+  return (
+    <div className="stack">
+      <Card title="Megjelenés és prémium beállítások">
+        <div className="row" style={{ gap: 18, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 240px' }}>
+            <div className="lbl">Téma</div>
+            <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+              {Object.keys(THEME_STYLES).map((theme) => (
+                <Btn key={theme} kind={ui.theme === theme ? 'gold' : 'quiet'} onClick={() => onChange({ ...ui, theme })}>{theme}</Btn>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex: '1 1 240px' }}>
+            <div className="lbl">AI képstílus</div>
+            <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+              {IMAGE_MODES.map((mode) => (
+                <Btn key={mode} kind={ui.imageMode === mode ? 'gold' : 'quiet'} onClick={() => onChange({ ...ui, imageMode: mode })}>{mode}</Btn>
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="note" style={{ marginTop: 16 }}>A választások elmentődnek helyben, és a Védett helyek fülön a kiválasztott képi stílus jelenik meg.</p>
+      </Card>
+      <Card title="Üzemeltetési gyorsindító">
+        <ul className="list">
+          <li>
+            <div className="lbl">Nyomtatási jelentés</div>
+            <p className="note">A Jelentések fülről közvetlenül készíthetsz PDF-et vagy nyomtatott dokumentumot.</p>
+          </li>
+          <li>
+            <div className="lbl">Aktuális csapatfigyelés</div>
+            <p className="note">A lejárati és próbaidős figyelmeztetések élőben frissülnek a riportban.</p>
+          </li>
+          <li>
+            <div className="lbl">Gyors betöltés</div>
+            <p className="note">Az állományt egyszerűen újratöltheted példaadatokkal vagy törölheted, ha tiszta kezdés kell.</p>
+          </li>
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
+function Vedett({ sites, imageMode }) {
+  const selected = imageMode === 'face2' ? face2 : imageMode === 'face3' ? face3 : face1;
   return (
     <div className="stack">
       <Card title="Védett helyek felügyelete">
@@ -832,7 +1088,7 @@ function Vedett({ sites }) {
         {sites.map((site) => (
           <article key={site.id} className="loc-card">
             <div className="loc-img">
-              <img src={site.kep} alt={site.nev} />
+              <img src={selected} alt={site.nev} />
             </div>
             <div className="loc-bd">
               <div className="card-hd" style={{ padding: 0, borderBottom: 'none' }}>

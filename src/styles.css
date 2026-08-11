@@ -131,5 +131,21 @@
 .usss .loc-img{height:170px;display:flex;align-items:center;justify-content:center;padding:14px 26px;background:radial-gradient(560px 200px at 50% -20%,rgba(201,162,39,.18),transparent 70%),#05070A;border-bottom:1px solid var(--hair)}
 .usss .loc-img img{max-width:100%;max-height:100%;border-radius:16px;}
 .usss .loc-bd{padding:18px}
+.usss .report-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+.usss .report-card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:20px;padding:18px;min-height:120px;display:flex;flex-direction:column;justify-content:space-between;}
+.usss .report-card .lbl{font-family:'Marcellus',Georgia,serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.usss .report-card .value{font-size:2rem;line-height:1;margin:0;color:var(--txt);font-weight:700}
+.usss .report-card .note{margin-top:12px;color:var(--mut);font-size:13px;line-height:1.5}
+.usss .report-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.usss .report-summary .lbl{margin-bottom:6px}
+.usss .report-summary .note{margin:0}
+@media print{
+  .usss{background:#fff;color:#000}
+  .usss nav.tabs,.usss .statusbar,.usss footer,.usss .btn,.usss .goldline{display:none}
+  .usss .wrap{max-width:none;padding:0}
+  .usss .card,.usss .report-card{border-color:#999;box-shadow:none}
+  .usss .scroll{overflow:visible}
+  .usss .input{background:#fff;border-color:#999}
+}
 .usss .diamond.off{background:var(--line)}
 @media(prefers-reduced-motion:reduce){.usss *{animation:none!important;transition:none!important}}
