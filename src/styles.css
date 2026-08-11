@@ -1,12 +1,12 @@
 .usss{
-  --ink:#06080B; --panel:#0B0F15; --panel2:#10151D; --raise:#141A23;
-  --line:#1D2531; --hair:#161C25;
+  --ink:#030407; --panel:#05070A; --panel2:#080A0F; --raise:#0F1218;
+  --line:#11151E; --hair:#0B0F14;
   --txt:#E9ECF1; --mut:#8B95A7; --faint:#5A6373;
   --gold:#C9A227; --gold-lt:#E8CE7A; --gold-dk:#8A6F1B;
   --ok:#46BC8B; --info:#5AA9E6; --bad:#D6455D; --warn:#E0A13A;
-  background:radial-gradient(180deg, #080A0F 0%, #05070A 35%, #040507 100%);
+  background:radial-gradient(180deg, #05070A 0%, #010205 35%, #000104 100%);
   color:var(--txt); font-family:Inter,system-ui,sans-serif; font-size:14px; min-height:100vh;
-  background-image:radial-gradient(1100px 520px at 50% -10%, rgba(201,162,39,.11), transparent 70%), linear-gradient(180deg,rgba(255,255,255,.02),transparent 32%);
+  background-image:radial-gradient(1100px 520px at 50% -10%, rgba(201,162,39,.09), transparent 70%), linear-gradient(180deg,rgba(255,255,255,.02),transparent 32%);
 }
 .usss *{box-sizing:border-box}
 .usss button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
@@ -15,7 +15,11 @@
 .usss body, .usss html{margin:0;padding:0}
 .usss .goldline{height:2px;background:linear-gradient(90deg,transparent,var(--gold-dk) 15%,var(--gold-lt) 50%,var(--gold-dk) 85%,transparent)}
 .usss .masthead{padding:40px 0 0;text-align:center;position:relative}
-.usss .hero{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;margin-top:8px}
+.usss .hero{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;margin-top:8px}
+.usss .hero-actions{display:flex;align-items:center;gap:10px;margin-top:14px}
+.usss .hero-actions .btn{padding:10px 16px}
+.usss .hero-actions .linkbtn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:none;color:var(--gold-lt);background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:14px;transition:all .18s;text-decoration:none;min-width:360px;overflow-wrap:anywhere}
+.usss .hero-actions .linkbtn:hover{background:rgba(201,162,39,.14);color:#FFF}
 .usss .crest{width:102px;height:102px;margin:0 auto;border:1px solid rgba(201,162,39,.65);display:flex;align-items:center;justify-content:center;padding:14px;background:linear-gradient(180deg,rgba(201,162,39,.24),rgba(15,13,12,.35));box-shadow:0 0 0 6px rgba(201,162,39,.08), inset 0 4px 0 rgba(255,255,255,.12);border-radius:28px}
 .usss .crest img{width:100%;height:100%;object-fit:contain;display:block}
 .usss .crest .star{color:var(--gold-lt);font-size:13px;line-height:1}

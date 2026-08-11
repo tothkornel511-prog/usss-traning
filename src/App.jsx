@@ -421,21 +421,42 @@ export default function App() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(ui));
   }, [ui]);
 
+  const recordGroups = useMemo(() => {
+    const groups = {};
+    data.records.forEach((r) => {
+      const key = r.emberId + '|' + r.kod;
+      groups[key] = groups[key] || [];
+      groups[key].push(r);
+    });
+    Object.values(groups).forEach((records) => {
+      records.sort((a, b) => {
+        const da = a.datum || '0000-00-00';
+        const db = b.datum || '0000-00-00';
+        if (da !== db) return db.localeCompare(da);
+        return b.id.localeCompare(a.id);
+      });
+    });
+    return groups;
+  }, [data.records]);
+
   const recMap = useMemo(() => {
     const m = {};
-    data.records.forEach((r) => {
+    Object.entries(recordGroups).forEach(([key, records]) => {
+      const r = records[0];
       const ho = Number(data.ervenyesseg?.[r.kod] || 0);
       const lejar = r.statusz === 'kesz' && ho > 0 && r.datum ? addMonths(r.datum, ho) : null;
       const hatra = lejar ? napokMulva(lejar) : null;
-      m[r.emberId + '|' + r.kod] = { ...r, lejar, hatra, lejart: hatra !== null && hatra < 0 };
+      m[key] = { ...r, lejar, hatra, lejart: hatra !== null && hatra < 0 };
     });
     return m;
-  }, [data.records, data.ervenyesseg]);
+  }, [recordGroups, data.ervenyesseg]);
 
   const ervenyes = (emberId, kod) => {
     const r = recMap[emberId + '|' + kod];
     return !!r && r.statusz === 'kesz' && !r.lejart;
   };
+
+  const getRecords = (emberId, kod) => recordGroups[emberId + '|' + kod] || [];
 
   const allapot = useMemo(() => {
     const m = {};
@@ -505,7 +526,6 @@ export default function App() {
     ['allomany', 'Állomány'],
     ['tabla', 'Státusztábla'],
     ['modulok', 'Modulok'],
-    ['trening', 'Képzési terv'],
     ['jelentes', 'Jelentések'],
     ['vedett', 'Védett helyek'],
     ...(ui.isAdmin ? [['admin', 'Admin']] : []),
@@ -570,6 +590,10 @@ export default function App() {
               <h1 className="brand">USSS Elite Training HQ</h1>
               <div className="sub">Oktatási jegyzőkönyv, védett helyek felügyelete és prémium státuszkezelés</div>
             </div>
+            <div className="hero-actions">
+              <button type="button" className="btn gold" onClick={() => window.location.reload()}>Frissítés</button>
+              <a href="https://tothkornel511-prog.github.io/usss-traning/" target="_blank" rel="noreferrer" className="linkbtn" title="Megnyitja az éles weboldalt">https://tothkornel511-prog.github.io/usss-traning/</a>
+            </div>
           </div>
           <div className="divider"><span className="diamond" /></div>
         </div>
@@ -598,7 +622,6 @@ export default function App() {
         )}
         {tab === 'tabla' && <Tabla data={data} allapot={allapot} recMap={recMap} onCell={setRecord} onOpen={nyit} />}
         {tab === 'modulok' && <ModulLista data={data} recMap={recMap} onErveny={setErveny} isAdmin={ui.isAdmin} />}
-        {tab === 'trening' && <Trening data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} onOpen={nyit} />}
         {tab === 'jelentes' && <Jelentes data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} csv={csv} onCopy={copyCsv} onDownload={downloadCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
         {tab === 'vedett' && <Vedett sites={data.vedett} imageMode={ui.imageMode} isAdmin={ui.isAdmin}
           filter={vedettFilter} onFilterChange={setVedettFilter}
@@ -615,7 +638,7 @@ export default function App() {
       </footer>
 
       <Karton open={!!aktiv} ember={aktiv} allapot={aktiv ? allapot[aktiv.id] : null} recMap={recMap}
-        onClose={() => setModal(null)} onCell={setRecord} onRecord={updateRecord} />
+        getRecords={getRecords} records={data.records} onClose={() => setModal(null)} onCell={setRecord} onRecord={updateRecord} />
       <EmberForm open={modal?.type === 'ember'} item={modal?.item} onClose={() => setModal(null)}
         onSave={(p) => { upsertEmber(p); setModal(null); }} />
       <Tomeges open={modal?.type === 'tomeges'} onClose={() => setModal(null)}
@@ -797,7 +820,7 @@ function Allomany({ data, allapot, q, setQ, onOpen, onNew, onEdit, onDelete, onB
   );
 }
 
-function Karton({ open, ember, allapot, recMap, onClose, onCell, onRecord }) {
+function Karton({ open, ember, allapot, recMap, getRecords, records, onClose, onCell, onRecord }) {
   if (!open || !ember || !allapot) return null;
 
   return (
@@ -823,7 +846,8 @@ function Karton({ open, ember, allapot, recMap, onClose, onCell, onRecord }) {
               </span>
             </div>
             {sz.modulok.map((mo) => {
-              const r = recMap[ember.id + '|' + mo.kod];
+              const records = getRecords(ember.id, mo.kod);
+              const latest = records[0];
               return (
                 <div className="modrow" key={sz.id + mo.kod}>
                   <span className="kod">{mo.kod}</span>
@@ -833,24 +857,29 @@ function Karton({ open, ember, allapot, recMap, onClose, onCell, onRecord }) {
                   </span>
                   <div className="seg">
                     {STATUS_ORDER.map((k) => (
-                      <button key={k} className={r?.statusz === k ? 'on' : ''}
-                        style={r?.statusz === k ? { background: STATUS[k].szin } : undefined}
-                        onClick={() => onCell(ember.id, mo.kod, r?.statusz === k ? null : k)}>
+                      <button key={k} className={latest?.statusz === k ? 'on' : ''}
+                        style={latest?.statusz === k ? { background: STATUS[k].szin } : undefined}
+                        onClick={() => onCell(ember.id, mo.kod, latest?.statusz === k ? null : k)}>
                         {STATUS[k].label}
                       </button>
                     ))}
                   </div>
-                  {r?.statusz === 'kesz' && (
+                  {latest?.statusz === 'kesz' && (
                     <>
-                      <input type="date" className="mini" value={r.datum || ''} onChange={(e) => onRecord({ ...r, datum: e.target.value })} />
-                      <input className="mini" style={{ width: 108 }} placeholder="Oktató" value={r.oktato || ''} onChange={(e) => onRecord({ ...r, oktato: e.target.value })} />
-                      <input className="mini" style={{ width: 108 }} placeholder="Megjegyzés" value={r.megj || ''} onChange={(e) => onRecord({ ...r, megj: e.target.value })} />
+                      <input type="date" className="mini" value={latest.datum || ''} onChange={(e) => onRecord({ ...latest, datum: e.target.value })} />
+                      <input className="mini" style={{ width: 108 }} placeholder="Oktató" value={latest.oktato || ''} onChange={(e) => onRecord({ ...latest, oktato: e.target.value })} />
+                      <input className="mini" style={{ width: 108 }} placeholder="Megjegyzés" value={latest.megj || ''} onChange={(e) => onRecord({ ...latest, megj: e.target.value })} />
                     </>
                   )}
-                  {r?.lejar && (
-                    <Chip szin={r.lejart ? 'var(--bad)' : r.hatra <= 30 ? 'var(--warn)' : 'var(--faint)'}>
-                      {r.lejart ? `LEJÁRT ${fmt(r.lejar)}` : `${fmt(r.lejar)} · ${r.hatra}N`}
+                  {latest?.lejar && (
+                    <Chip szin={latest.lejart ? 'var(--bad)' : latest.hatra <= 30 ? 'var(--warn)' : 'var(--faint)'}>
+                      {latest.lejart ? `LEJÁRT ${fmt(latest.lejar)}` : `${fmt(latest.lejar)} · ${latest.hatra}N`}
                     </Chip>
+                  )}
+                  {records.length > 1 && (
+                    <div className="note" style={{ marginTop: 10, fontSize: 11, color: 'var(--mut)' }}>
+                      {records.length} feljegyzés (utolsó: {fmt(latest?.datum)})
+                    </div>
                   )}
                 </div>
               );
@@ -859,6 +888,18 @@ function Karton({ open, ember, allapot, recMap, onClose, onCell, onRecord }) {
           </div>
         );
       })}
+
+      <Card title="Teljes képzési előzmény" jobb={<span className="mono faint">Legfrissebb modulonként</span>}>
+        <div className="list">
+          {data.records.filter((r) => r.emberId === ember.id).sort((a, b) => (b.datum || '').localeCompare(a.datum || '')).map((rec) => (
+            <div key={rec.id} className="modrow" style={{ gap: 12, borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 12, marginTop: 12 }}>
+              <span className="kod">{rec.kod}</span>
+              <span className="nev" style={{ flex: 1, color: 'var(--mut)' }}>{rec.oktato || 'Oktató: N/A'}</span>
+              <span className="mono faint">{fmt(rec.datum)} {STATUS[rec.statusz]?.rovid || rec.statusz}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
         <Btn kind="gold" onClick={onClose}>Kész</Btn>
@@ -987,95 +1028,7 @@ function ModulLista({ data, recMap, onErveny }) {
   );
 }
 
-function Trening({ data, allapot, recMap, lejarok, onOpen }) {
-  const totalPeople = data.people.length;
-  const totalModules = MODULOK.length;
-  const completedSlots = data.records.filter((r) => r.statusz === 'kesz' && !r.lejart).length;
-  const totalSlots = totalPeople * totalModules;
-  const completionRate = totalSlots ? Math.round((completedSlots / totalSlots) * 100) : 0;
-  const expiringSoon = lejarok.filter((r) => r.hatra !== null && r.hatra > 0 && r.hatra <= 30);
-  const overdue = lejarok.filter((r) => r.lejart);
-  const trainingQueue = [...data.people]
-    .map((p) => {
-      const missing = MODULOK.filter((m) => !ervenyes(p.id, m.kod));
-      return { person: p, missingCount: missing.length, missing: missing.slice(0, 4) };
-    })
-    .sort((a, b) => b.missingCount - a.missingCount || a.person.nev.localeCompare(b.person.nev, 'hu'))
-    .slice(0, 5);
 
-  return (
-    <div className="stack">
-      <Card title="Képzési terv">
-        <div className="training-grid">
-          <div className="training-card accent">
-            <div className="lbl">Képzési cél</div>
-            <div className="value">{completionRate}%</div>
-            <div className="note">A csapat készségi szintje a teljes modulállományhoz viszonyítva.</div>
-          </div>
-          <div className="training-card">
-            <div className="lbl">Próbaidős</div>
-            <div className="value">{data.people.filter((p) => allapot[p.id]?.probaAktiv).length}</div>
-            <div className="note">Aktuálisan nyomon követett új csapattag.</div>
-          </div>
-          <div className="training-card">
-            <div className="lbl">Lejárt képzések</div>
-            <div className="value">{overdue.length}</div>
-            <div className="note">Azonnali frissítést igénylő modulok.</div>
-          </div>
-          <div className="training-card">
-            <div className="lbl">30 napon belüli lejáratok</div>
-            <div className="value">{expiringSoon.length}</div>
-            <div className="note">Fókuszálandó, hamarosan veszélybe kerülő képzések.</div>
-          </div>
-        </div>
-      </Card>
-
-      <Card title="Képzési prioritások">
-        <p className="note">A rendszer most automatikusan ajánl gyakorlati és biztonsági felkészítéseket a legnagyobb hiányosságok alapján.</p>
-        <ul className="list">
-          {trainingQueue.map((item) => (
-            <li key={item.person.id} className="spread" style={{ alignItems: 'flex-start' }}>
-              <div>
-                <div className="lbl">{item.person.nev}</div>
-                <p className="note">Hiányzó modulok: {item.missingCount}. Legfontosabb hiányzás: {item.missing.map((m) => m.kod).join(', ') || 'Nincs'}</p>
-              </div>
-              <Btn sm kind="quiet" onClick={() => onOpen(item.person.id)}>Karton</Btn>
-            </li>
-          ))}
-        </ul>
-      </Card>
-
-      <div className="grid2">
-        <Card title="Műveleti készségterv">
-          <ul className="list">
-            <li>
-              <div className="lbl">Bázisbiztonsági képzés</div>
-              <p className="note">Ellenőrizd az alapmodulokat (A, G1, K, L, R), mielőtt új feladatot vállalnak.</p>
-            </li>
-            <li>
-              <div className="lbl">Haladó reagálók</div>
-              <p className="note">Elsőként frissítsd a taktikai és közelharci modulokat (D, F2, G2H, H).</p>
-            </li>
-            <li>
-              <div className="lbl">Speciális szintű ellenőrzés</div>
-              <p className="note">A parancsnoki modulok (F3, S2, T2) akkor kapnak prioritást, ha a standard modulok 80%-a kész.</p>
-            </li>
-          </ul>
-        </Card>
-        <Card title="Haladási figyelmeztetések">
-          <ul className="list">
-            {overdue.length > 0 ? overdue.slice(0, 5).map((r) => (
-              <li key={r.id} className="spread">
-                <span>{r.ember.nev} · {r.kod}</span>
-                <Chip szin="var(--bad)">LEJÁRT</Chip>
-              </li>
-            )) : <p className="note">Nincs lejárt képesítés jelenleg.</p>}
-          </ul>
-        </Card>
-      </div>
-    </div>
-  );
-}
 
 function Jelentes({ data, allapot, recMap, lejarok, csv, onCopy, onDownload, onReset, onDemo }) {
   const totalPeople = data.people.length;
