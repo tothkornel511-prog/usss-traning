@@ -80,8 +80,8 @@ const UI_DEFAULTS = {
   layout: 'wide',
   accent: 'gold',
   isAdmin: false,
-  adminCode: '',
-  visitorCode: '',
+  adminCode: 'LSGOVADMIN',
+  visitorCode: 'LSGOV',
 };
 
 const SZINTEK = [
@@ -582,6 +582,7 @@ export default function App() {
         {tab === 'jelentes' && <Jelentes data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} csv={csv} onCopy={copyCsv} onDownload={downloadCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
         {tab === 'vedett' && <Vedett sites={data.vedett} imageMode={ui.imageMode} isAdmin={ui.isAdmin}
           filter={vedettFilter} onFilterChange={setVedettFilter}
+          statusFilter={vedettStatus} onStatusFilterChange={setVedettStatus}
           onEdit={(site) => setVedettModal(site)} onDelete={deleteVedettSite} onAdd={() => setVedettModal({ id: uid(), nev: '', zona: '', statusz: '', ellenorzes: todayISO(), kritikus: '', kep: '' })}
           onDuplicate={duplicateVedettSite} />}
         {tab === 'admin' && ui.isAdmin && <AdminPanel data={data} onExport={(json) => copyText(json)} onImport={(json) => { try { setData(JSON.parse(json)); alert('Importálás sikeres.'); } catch (err) { alert('Érvénytelen JSON.'); } }} onReset={() => setData(EMPTY)} />}
