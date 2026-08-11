@@ -8,13 +8,6 @@ const STORE_KEY = 'usss:kepzes:v2';
 const SETTINGS_KEY = 'usss:ui:v1';
 const PROBAIDO_NAP = 14;
 
-const UI_DEFAULTS = {
-  theme: 'gold',
-  imageMode: 'face1',
-  layout: 'wide',
-  accent: 'gold',
-};
-
 const THEME_STYLES = {
   gold: {
     '--ink': '#06080B',
@@ -73,6 +66,23 @@ const THEME_STYLES = {
 };
 
 const IMAGE_MODES = ['face1', 'face2', 'face3'];
+
+const VEDETT_STATUS_COLORS = {
+  szigorított: '#D6455D',
+  védett: '#E0A13A',
+  'magas figyelem': '#F16F97',
+  'normál': '#46BC8B',
+};
+
+const UI_DEFAULTS = {
+  theme: 'gold',
+  imageMode: 'face1',
+  layout: 'wide',
+  accent: 'gold',
+  isAdmin: false,
+  adminCode: '',
+  visitorCode: '',
+};
 
 const SZINTEK = [
   {
@@ -175,7 +185,7 @@ const VEDETT_HELYEK = [
   { id: 'v3', nev: 'Titkos Szakértői Szektor', zona: 'Belső 5', statusz: 'magas figyelem', ellenorzes: '2026-08-08', kritikus: 'Tűzoltás és biztonsági csapat készenlétben', kep: face3 },
 ];
 
-const EMPTY = { people: [], records: [], ervenyesseg: {} };
+const EMPTY = { people: [], records: [], ervenyesseg: {}, vedett: [] };
 
 const KEZDETI = {
   ervenyesseg: { F: 12, F1: 12, G1: 12, E: 24 },
@@ -201,6 +211,7 @@ const KEZDETI = {
     { id: 'p19', nev: 'Tyron Wolf', jelveny: 'USSS-004', belepes: '2026-08-01', megj: '' },
   ],
   records: [],
+  vedett: VEDETT_HELYEK,
 };
 
 const FULL_ROSTER_IDS = new Set(KEZDETI.people.map((p) => p.id));
@@ -208,6 +219,15 @@ const FULL_ROSTER_IDS = new Set(KEZDETI.people.map((p) => p.id));
 const isFullRoster = (people) => Array.isArray(people) && people.length === KEZDETI.people.length && people.every((p) => FULL_ROSTER_IDS.has(p.id));
 
 const uid = () => Math.random().toString(36).slice(2, 10);
+const makeCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('A kód kimásolva a vágólapra.');
+  } catch (error) {
+    alert('Nem sikerült kimásolni.');
+  }
+};
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const fmt = (iso) => (iso ? iso.replace(/-/g, '.') + '.' : '—');
 const ket = (n) => String(n).padStart(2, '0');
@@ -297,13 +317,54 @@ function Rail({ elert }) {
 
 export default function App() {
   const [data, setData] = useState(KEZDETI);
-  const [ui, setUi] = useState(UI_DEFAULTS);
+  const [ui, setUi] = useState(() => {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(SETTINGS_KEY) : null;
+    const parsed = raw ? JSON.parse(raw) : {};
+    return {
+      ...UI_DEFAULTS,
+      ...parsed,
+      adminCode: parsed.adminCode || makeCode(),
+      visitorCode: parsed.visitorCode || makeCode(),
+    };
+  });
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(null);
   const [tab, setTab] = useState('attekintes');
   const [q, setQ] = useState('');
   const [modal, setModal] = useState(null);
+  const [vedettModal, setVedettModal] = useState(null);
+  const [vedettFilter, setVedettFilter] = useState('');
+  const [vedettStatus, setVedettStatus] = useState('');
   const first = useRef(true);
+
+  const saveVedettSite = (site) => setData((d) => {
+    const exists = d.vedett.find((x) => x.id === site.id);
+    if (exists) {
+      return { ...d, vedett: d.vedett.map((x) => (x.id === site.id ? site : x)) };
+    }
+    return { ...d, vedett: [...d.vedett, site] };
+  });
+
+  const deleteVedettSite = (id) => setData((d) => ({ ...d, vedett: d.vedett.filter((x) => x.id !== id) }));
+
+  const duplicateVedettSite = (site) => setData((d) => ({
+    ...d,
+    vedett: [...d.vedett, { ...site, id: uid(), nev: `${site.nev} másolata` }],
+  }));
+
+  const enterCode = (code) => {
+    if (code.trim().toUpperCase() === ui.adminCode) {
+      setUi((prev) => ({ ...prev, isAdmin: true }));
+      alert('Admin mód engedélyezve.');
+      return;
+    }
+    if (code.trim().toUpperCase() === ui.visitorCode) {
+      setUi((prev) => ({ ...prev, isAdmin: false }));
+      alert('Látogató mód engedélyezve.');
+      return;
+    }
+    alert('Helytelen kód.');
+  };
 
   useEffect(() => {
     const raw = localStorage.getItem(STORE_KEY);
@@ -427,6 +488,7 @@ export default function App() {
     ['trening', 'Képzési terv'],
     ['jelentes', 'Jelentések'],
     ['vedett', 'Védett helyek'],
+    ...(ui.isAdmin ? [['admin', 'Admin']] : []),
     ['settings', 'Beállítások'],
     ['sugo', 'Súgó'],
   ];
@@ -515,11 +577,15 @@ export default function App() {
             onDelete={torolEmber} onBulk={() => setModal({ type: 'tomeges' })} />
         )}
         {tab === 'tabla' && <Tabla data={data} allapot={allapot} recMap={recMap} onCell={setRecord} onOpen={nyit} />}
-        {tab === 'modulok' && <ModulLista data={data} recMap={recMap} onErveny={setErveny} />}
+        {tab === 'modulok' && <ModulLista data={data} recMap={recMap} onErveny={setErveny} isAdmin={ui.isAdmin} />}
         {tab === 'trening' && <Trening data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} onOpen={nyit} />}
         {tab === 'jelentes' && <Jelentes data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} csv={csv} onCopy={copyCsv} onDownload={downloadCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
-        {tab === 'vedett' && <Vedett sites={VEDETT_HELYEK} imageMode={ui.imageMode} />}
-        {tab === 'settings' && <Settings ui={ui} onChange={setUi} />}
+        {tab === 'vedett' && <Vedett sites={data.vedett} imageMode={ui.imageMode} isAdmin={ui.isAdmin}
+          filter={vedettFilter} onFilterChange={setVedettFilter}
+          onEdit={(site) => setVedettModal(site)} onDelete={deleteVedettSite} onAdd={() => setVedettModal({ id: uid(), nev: '', zona: '', statusz: '', ellenorzes: todayISO(), kritikus: '', kep: '' })}
+          onDuplicate={duplicateVedettSite} />}
+        {tab === 'admin' && ui.isAdmin && <AdminPanel data={data} onExport={(json) => copyText(json)} onImport={(json) => { try { setData(JSON.parse(json)); alert('Importálás sikeres.'); } catch (err) { alert('Érvénytelen JSON.'); } }} onReset={() => setData(EMPTY)} />}
+        {tab === 'settings' && <Settings ui={ui} onChange={setUi} onEnterCode={enterCode} onRegenerateCodes={() => setUi((prev) => ({ ...prev, adminCode: makeCode(), visitorCode: makeCode() }))} />}
         {tab === 'sugo' && <Sugo />}
       </main>
 
@@ -533,6 +599,8 @@ export default function App() {
         onSave={(p) => { upsertEmber(p); setModal(null); }} />
       <Tomeges open={modal?.type === 'tomeges'} onClose={() => setModal(null)}
         onSave={(l) => { setData((d) => ({ ...d, people: [...d.people, ...l] })); setModal(null); }} />
+      <VedettForm open={!!vedettModal} item={vedettModal} onClose={() => setVedettModal(null)}
+        onSave={(site) => { saveVedettSite(site); setVedettModal(null); }} />
     </div>
   );
 }
@@ -1123,7 +1191,8 @@ Javasolt intézkedések:
   );
 }
 
-function Settings({ ui, onChange }) {
+function Settings({ ui, onChange, onEnterCode, onRegenerateCodes }) {
+  const [code, setCode] = useState('');
   return (
     <div className="stack">
       <Card title="Megjelenés és prémium beállítások">
@@ -1147,6 +1216,18 @@ function Settings({ ui, onChange }) {
         </div>
         <p className="note" style={{ marginTop: 16 }}>A választások elmentődnek helyben, és a Védett helyek fülön a kiválasztott képi stílus jelenik meg.</p>
       </Card>
+      <Card title="Kódos belépés és szerepkörök">
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+          <input className="input" placeholder="Írd be a kódot" value={code} onChange={(e) => setCode(e.target.value)} />
+          <Btn kind="gold" onClick={() => onEnterCode(code)}>Belépés</Btn>
+        </div>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+          <Btn kind="quiet" onClick={() => copyText(ui.adminCode)}>Admin kód másolása</Btn>
+          <Btn kind="quiet" onClick={() => copyText(ui.visitorCode)}>Látogató kód másolása</Btn>
+          <Btn kind="bad" onClick={onRegenerateCodes}>Kódok újragenerálása</Btn>
+        </div>
+        <p className="note" style={{ marginTop: 12 }}>Az admin kód a szerkesztési jogosultságot adja, a látogató kód csak megtekintésre.</p>
+      </Card>
       <Card title="Üzemeltetési gyorsindító">
         <ul className="list">
           <li>
@@ -1167,33 +1248,148 @@ function Settings({ ui, onChange }) {
   );
 }
 
-function Vedett({ sites, imageMode }) {
+function Vedett({ sites, imageMode, isAdmin, onEdit, onDelete, onAdd, filter, onFilterChange, statusFilter, onStatusFilterChange, onDuplicate }) {
   const selected = imageMode === 'face2' ? face2 : imageMode === 'face3' ? face3 : face1;
+  const visible = sites.filter((site) => {
+    const matchesText = !filter || [site.nev, site.zona, site.statusz, site.kritikus].some((value) => value?.toLowerCase().includes(filter.toLowerCase()));
+    const matchesStatus = !statusFilter || site.statusz.toLowerCase() === statusFilter.toLowerCase();
+    return matchesText && matchesStatus;
+  });
+  const statusOptions = Array.from(new Set(sites.map((site) => site.statusz))).sort();
+
   return (
     <div className="stack">
-      <Card title="Védett helyek felügyelete">
+      <Card title="Védett helyek felügyelete" jobb={isAdmin ? <Btn kind="gold" onClick={onAdd}>Új hely hozzáadása</Btn> : null}>
         <p className="note">A védett helyek gyors áttekintése. Minden helyszínhez AI-stílusú grafika és biztonsági állapot tartozik.</p>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+          <input className="input" placeholder="Szűrés név, zóna, státusz..." value={filter} onChange={(e) => onFilterChange(e.target.value)} style={{ flex: 1, minWidth: 220 }} />
+          <select className="input" value={statusFilter} onChange={(e) => onStatusFilterChange(e.target.value)} style={{ minWidth: 180 }}>
+            <option value="">Összes státusz</option>
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+          {isAdmin && <Btn kind="quiet" onClick={() => { onFilterChange(''); onStatusFilterChange(''); }}>Szűrők törlése</Btn>}
+        </div>
+        <div className="row" style={{ justifyContent: 'space-between', gap: 10, marginTop: 12 }}>
+          <span className="mono faint">Mutatva {visible.length}/{sites.length} hely</span>
+          {visible.length !== sites.length && <span className="mono faint">Szűrés aktív</span>}
+        </div>
       </Card>
       <div className="loc-grid">
-        {sites.map((site) => (
-          <article key={site.id} className="loc-card">
-            <div className="loc-img">
-              <img src={selected} alt={site.nev} />
-            </div>
-            <div className="loc-bd">
-              <div className="card-hd" style={{ padding: 0, borderBottom: 'none' }}>
-                <h2>{site.nev}</h2>
-                <Chip szin="var(--gold)">{site.statusz.toUpperCase()}</Chip>
+        {visible.map((site) => {
+          const badgeColor = VEDETT_STATUS_COLORS[site.statusz.toLowerCase()] || 'var(--gold)';
+          return (
+            <article key={site.id} className="loc-card">
+              <div className="loc-img">
+                <img src={site.kep || selected} alt={site.nev} />
               </div>
-              <div className="row" style={{ justifyContent: 'space-between', marginTop: 14 }}>
-                <span className="mono faint">Zóna: {site.zona}</span>
-                <span className="mono faint">Utolsó ellenőrzés: {fmt(site.ellenorzes)}</span>
+              <div className="loc-bd">
+                <div className="card-hd" style={{ padding: 0, borderBottom: 'none' }}>
+                  <h2>{site.nev}</h2>
+                  <Chip szin={badgeColor}>{site.statusz.toUpperCase()}</Chip>
+                </div>
+                <div className="row" style={{ justifyContent: 'space-between', marginTop: 14 }}>
+                  <span className="mono faint">Zóna: {site.zona}</span>
+                  <span className="mono faint">Utolsó ellenőrzés: {fmt(site.ellenorzes)}</span>
+                </div>
+                <p className="note" style={{ marginTop: 12 }}>{site.kritikus}</p>
+                {site.kritikus && <Chip szin="var(--bad)">KRITIKUS</Chip>}
+                {isAdmin && (
+                  <div className="row" style={{ gap: 10, marginTop: 16 }}>
+                    <Btn kind="quiet" onClick={() => onEdit(site)}>Szerkesztés</Btn>
+                    <Btn kind="quiet" onClick={() => onDuplicate(site)}>Duplikálás</Btn>
+                    <Btn kind="bad" onClick={() => onDelete(site.id)}>Törlés</Btn>
+                  </div>
+                )}
               </div>
-              <p className="note" style={{ marginTop: 12 }}>{site.kritikus}</p>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+function VedettForm({ open, item, onClose, onSave }) {
+  const defaults = { id: uid(), nev: '', zona: '', statusz: '', ellenorzes: todayISO(), kritikus: '', kep: face1 };
+  const [form, setForm] = useState(defaults);
+
+  useEffect(() => {
+    if (open) {
+      setForm(item ? { ...item } : defaults);
+    }
+  }, [open, item]);
+
+  const update = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const selectImage = (img) => () => setForm((prev) => ({ ...prev, kep: img }));
+
+  return (
+    <Sheet open={open} title={item ? 'Védett hely szerkesztése' : 'Új védett hely'} onClose={onClose} wide>
+      <div className="stack" style={{ gap: 16 }}>
+        <div className="fgrid">
+          <Field label="Helyszín neve"><input className="input" value={form.nev} onChange={update('nev')} /></Field>
+          <Field label="Zóna"><input className="input" value={form.zona} onChange={update('zona')} /></Field>
+        </div>
+        <div className="fgrid">
+          <Field label="Állapot"><input className="input" value={form.statusz} onChange={update('statusz')} placeholder="védett, szigorított, magas figyelem" /></Field>
+          <Field label="Utolsó ellenőrzés"><input type="date" className="input" value={form.ellenorzes} onChange={update('ellenorzes')} /></Field>
+        </div>
+        <Field label="Kritikus megjegyzés"><textarea className="input" rows="3" value={form.kritikus} onChange={update('kritikus')} /></Field>
+        <Field label="Kép URL"><input className="input" value={form.kep} onChange={update('kep')} placeholder="https://..." /></Field>
+        <Field label="Képstílus">
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {[face1, face2, face3].map((img, index) => (
+              <button key={index} type="button" className={`img-select${form.kep === img ? ' selected' : ''}`} onClick={selectImage(img)}>
+                <img src={img} alt={`Stílus ${index + 1}`} />
+              </button>
+            ))}
+          </div>
+          <p className="note" style={{ marginTop: 8 }}>Megadhatsz külső képet URL-lel, vagy válaszd a sablon AI-stílusokat.</p>
+        </Field>
+        <div className="row" style={{ justifyContent: 'flex-end', gap: 10 }}>
+          <Btn kind="quiet" onClick={onClose}>Mégse</Btn>
+          <Btn kind="gold" onClick={() => { onSave(form); }}>Mentés</Btn>
+        </div>
+      </div>
+    </Sheet>
+  );
+}
+
+function AdminPanel({ data, onExport, onImport, onReset }) {
+  const [payload, setPayload] = useState('');
+  return (
+    <div className="stack">
+      <Card title="Adminisztrációs panel">
+        <p className="note">A teljes adatbázist exportálhatod, importálhatod, vagy szükség esetén alaphelyzetbe állíthatod.</p>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+          <Btn kind="gold" onClick={() => onExport(JSON.stringify(data, null, 2))}>Exportálás</Btn>
+          <Btn kind="quiet" onClick={() => onReset()}>Törlés és újratöltés</Btn>
+        </div>
+      </Card>
+      <Card title="Importálás JSON-ből">
+        <textarea className="input mono" rows="8" value={payload} onChange={(e) => setPayload(e.target.value)} placeholder="Illeszd be a JSON-adatot ide..." />
+        <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
+          <Btn kind="quiet" onClick={() => setPayload('')}>Törlés</Btn>
+          <Btn kind="gold" onClick={() => onImport(payload)}>Importálás</Btn>
+        </div>
+      </Card>
+      <Card title="Gyors admin eszközök">
+        <ul className="list">
+          <li>
+            <div className="lbl">Biztonsági mentés</div>
+            <p className="note">Mentsd el a JSON-t, mielőtt nagyobb módosításokat végzel.</p>
+          </li>
+          <li>
+            <div className="lbl">Regenerálj kódot</div>
+            <p className="note">A Beállítások lapon új admin/látogató kódokat hozhatsz létre.</p>
+          </li>
+          <li>
+            <div className="lbl">Visszaállítás</div>
+            <p className="note">Alaphelyzetbe hozza a teljes listát, ideális teszteléshez vagy új kezdéshez.</p>
+          </li>
+        </ul>
+      </Card>
     </div>
   );
 }
