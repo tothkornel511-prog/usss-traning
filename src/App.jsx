@@ -323,8 +323,8 @@ export default function App() {
     return {
       ...UI_DEFAULTS,
       ...parsed,
-      adminCode: parsed.adminCode || makeCode(),
-      visitorCode: parsed.visitorCode || makeCode(),
+      adminCode: UI_DEFAULTS.adminCode,
+      visitorCode: UI_DEFAULTS.visitorCode,
     };
   });
   const [loaded, setLoaded] = useState(false);
@@ -345,12 +345,18 @@ export default function App() {
     return { ...d, vedett: [...d.vedett, site] };
   });
 
-  const deleteVedettSite = (id) => setData((d) => ({ ...d, vedett: d.vedett.filter((x) => x.id !== id) }));
+  const deleteVedettSite = (id) => {
+    if (!window.confirm('Biztosan törlöd a védett helyet?')) return;
+    setData((d) => ({ ...d, vedett: d.vedett.filter((x) => x.id !== id) }));
+  };
 
-  const duplicateVedettSite = (site) => setData((d) => ({
-    ...d,
-    vedett: [...d.vedett, { ...site, id: uid(), nev: `${site.nev} másolata` }],
-  }));
+  const duplicateVedettSite = (site) => {
+    if (!window.confirm('Duplikálod a védett helyet?')) return;
+    setData((d) => ({
+      ...d,
+      vedett: [...d.vedett, { ...site, id: uid(), nev: `${site.nev} másolata` }],
+    }));
+  };
 
   const enterCode = (code) => {
     if (code.trim().toUpperCase() === ui.adminCode) {
@@ -385,7 +391,15 @@ export default function App() {
     const rawUi = localStorage.getItem(SETTINGS_KEY);
     if (rawUi) {
       try {
-        setUi((prev) => ({ ...prev, ...JSON.parse(rawUi) }));
+        const parsed = JSON.parse(rawUi);
+        const safeUi = {
+          theme: parsed.theme,
+          imageMode: parsed.imageMode,
+          layout: parsed.layout,
+          accent: parsed.accent,
+          isAdmin: parsed.isAdmin ?? false,
+        };
+        setUi((prev) => ({ ...prev, ...safeUi }));
       } catch (error) {
         console.warn('Nem sikerült betölteni az UI-beállításokat:', error);
       }
@@ -477,8 +491,14 @@ export default function App() {
       const i = d.people.findIndex((x) => x.id === p.id);
       return { ...d, people: i === -1 ? [...d.people, p] : d.people.map((x) => (x.id === p.id ? p : x)) };
     });
-  const torolEmber = (id) => setData((d) => ({ ...d, people: d.people.filter((p) => p.id !== id), records: d.records.filter((r) => r.emberId !== id) }));
-  const torolAllat = () => setData(EMPTY);
+  const torolEmber = (id) => {
+    if (!window.confirm('Biztosan törlöd a személyt és az összes kapcsolódó adatát?')) return;
+    setData((d) => ({ ...d, people: d.people.filter((p) => p.id !== id), records: d.records.filter((r) => r.emberId !== id) }));
+  };
+  const torolAllat = () => {
+    if (!window.confirm('Biztosan törlöd az összes adatot? Ez visszavonhatatlan.')) return;
+    setData(EMPTY);
+  };
 
   const tabs = [
     ['attekintes', 'Áttekintés'],
@@ -586,7 +606,7 @@ export default function App() {
           onEdit={(site) => setVedettModal(site)} onDelete={deleteVedettSite} onAdd={() => setVedettModal({ id: uid(), nev: '', zona: '', statusz: '', ellenorzes: todayISO(), kritikus: '', kep: '' })}
           onDuplicate={duplicateVedettSite} />}
         {tab === 'admin' && ui.isAdmin && <AdminPanel data={data} onExport={(json) => copyText(json)} onImport={(json) => { try { setData(JSON.parse(json)); alert('Importálás sikeres.'); } catch (err) { alert('Érvénytelen JSON.'); } }} onReset={() => setData(EMPTY)} />}
-        {tab === 'settings' && <Settings ui={ui} onChange={setUi} onEnterCode={enterCode} onRegenerateCodes={() => setUi((prev) => ({ ...prev, adminCode: makeCode(), visitorCode: makeCode() }))} />}
+        {tab === 'settings' && <Settings ui={ui} onChange={setUi} onEnterCode={enterCode} onRegenerateCodes={() => { setUi((prev) => ({ ...prev, adminCode: UI_DEFAULTS.adminCode, visitorCode: UI_DEFAULTS.visitorCode })); alert('A kódok mostantól újra az alapértelmezett értékek: LSGOVADMIN és LSGOV.'); }} />}
         {tab === 'sugo' && <Sugo />}
       </main>
 
@@ -1223,9 +1243,13 @@ function Settings({ ui, onChange, onEnterCode, onRegenerateCodes }) {
           <Btn kind="gold" onClick={() => onEnterCode(code)}>Belépés</Btn>
         </div>
         <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+          <Field label="Admin kód"><input className="input" readOnly value={ui.adminCode} /></Field>
+          <Field label="Látogató kód"><input className="input" readOnly value={ui.visitorCode} /></Field>
+        </div>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
           <Btn kind="quiet" onClick={() => copyText(ui.adminCode)}>Admin kód másolása</Btn>
           <Btn kind="quiet" onClick={() => copyText(ui.visitorCode)}>Látogató kód másolása</Btn>
-          <Btn kind="bad" onClick={onRegenerateCodes}>Kódok újragenerálása</Btn>
+          <Btn kind="bad" onClick={onRegenerateCodes}>Alapértelmezett kódokra</Btn>
         </div>
         <p className="note" style={{ marginTop: 12 }}>Az admin kód a szerkesztési jogosultságot adja, a látogató kód csak megtekintésre.</p>
       </Card>
