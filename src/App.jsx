@@ -424,6 +424,7 @@ export default function App() {
     ['allomany', 'Állomány'],
     ['tabla', 'Státusztábla'],
     ['modulok', 'Modulok'],
+    ['trening', 'Képzési terv'],
     ['jelentes', 'Jelentések'],
     ['vedett', 'Védett helyek'],
     ['settings', 'Beállítások'],
@@ -515,6 +516,7 @@ export default function App() {
         )}
         {tab === 'tabla' && <Tabla data={data} allapot={allapot} recMap={recMap} onCell={setRecord} onOpen={nyit} />}
         {tab === 'modulok' && <ModulLista data={data} recMap={recMap} onErveny={setErveny} />}
+        {tab === 'trening' && <Trening data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} onOpen={nyit} />}
         {tab === 'jelentes' && <Jelentes data={data} allapot={allapot} recMap={recMap} lejarok={lejarok} csv={csv} onCopy={copyCsv} onDownload={downloadCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
         {tab === 'vedett' && <Vedett sites={VEDETT_HELYEK} imageMode={ui.imageMode} />}
         {tab === 'settings' && <Settings ui={ui} onChange={setUi} />}
@@ -892,6 +894,94 @@ function ModulLista({ data, recMap, onErveny }) {
           </ul>
         </Card>
       ))}
+    </div>
+  );
+}
+
+function Trening({ data, allapot, recMap, lejarok, onOpen }) {
+  const totalPeople = data.people.length;
+  const totalModules = MODULOK.length;
+  const completedSlots = data.records.filter((r) => r.statusz === 'kesz' && !r.lejart).length;
+  const totalSlots = totalPeople * totalModules;
+  const completionRate = totalSlots ? Math.round((completedSlots / totalSlots) * 100) : 0;
+  const expiringSoon = lejarok.filter((r) => r.hatra !== null && r.hatra > 0 && r.hatra <= 30);
+  const overdue = lejarok.filter((r) => r.lejart);
+  const trainingQueue = [...data.people]
+    .map((p) => {
+      const missing = MODULOK.filter((m) => !ervenyes(p.id, m.kod));
+      return { person: p, missingCount: missing.length, missing: missing.slice(0, 4) };
+    })
+    .sort((a, b) => b.missingCount - a.missingCount || a.person.nev.localeCompare(b.person.nev, 'hu'))
+    .slice(0, 5);
+
+  return (
+    <div className="stack">
+      <div className="training-grid">
+        <div className="training-card">
+          <div className="lbl">Képzési cél</div>
+          <div className="value">{completionRate}%</div>
+          <div className="note">A csapat készségi szintje a teljes modulállományhoz viszonyítva.</div>
+        </div>
+        <div className="training-card">
+          <div className="lbl">Próbaidős</div>
+          <div className="value">{data.people.filter((p) => allapot[p.id]?.probaAktiv).length}</div>
+          <div className="note">Aktuálisan nyomon követett új csapattag.</div>
+        </div>
+        <div className="training-card">
+          <div className="lbl">Lejárt képzések</div>
+          <div className="value">{overdue.length}</div>
+          <div className="note">Azonnali frissítést igénylő modulok.</div>
+        </div>
+        <div className="training-card">
+          <div className="lbl">30 napon belüli lejáratok</div>
+          <div className="value">{expiringSoon.length}</div>
+          <div className="note">Fókuszálandó, hamarosan veszélybe kerülő képzések.</div>
+        </div>
+      </div>
+
+      <Card title="Képzési prioritások">
+        <p className="note">A rendszer most automatikusan ajánl gyakorlati és biztonsági felkészítéseket a legnagyobb hiányosságok alapján.</p>
+        <ul className="list">
+          {trainingQueue.map((item) => (
+            <li key={item.person.id} className="spread" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <div className="lbl">{item.person.nev}</div>
+                <p className="note">Hiányzó modulok: {item.missingCount}. Legfontosabb hiányzás: {item.missing.map((m) => m.kod).join(', ') || 'Nincs'}</p>
+              </div>
+              <Btn sm kind="quiet" onClick={() => onOpen(item.person.id)}>Karton</Btn>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <div className="grid2">
+        <Card title="Műveleti készségterv">
+          <ul className="list">
+            <li>
+              <div className="lbl">Bázisbiztonsági képzés</div>
+              <p className="note">Ellenőrizd az alapmodulokat (A, G1, K, L, R), mielőtt új feladatot vállalnak.</p>
+            </li>
+            <li>
+              <div className="lbl">Haladó reagálók</div>
+              <p className="note">Elsőként frissítsd a taktikai és közelharci modulokat (D, F2, G2H, H).</p>
+            </li>
+            <li>
+              <div className="lbl">Speciális szintű ellenőrzés</div>
+              <p className="note">A parancsnoki modulok (F3, S2, T2) akkor kapnak prioritást, ha a standard modulok 80%-a kész.</p>
+            </li>
+          </ul>
+        </Card>
+        <Card title="Haladási figyelmeztetések">
+          <ul className="list">
+            {overdue.length > 0 ? overdue.slice(0, 5).map((r) => (
+              <li key={r.id} className="spread">
+                <span>{r.ember.nev} · {r.kod}</span>
+                <Chip szin="var(--bad)">LEJÁRT</Chip>
+              </li>
+            )) : <p className="note">Nincs lejárt képesítés jelenleg.</p>}
+          </ul>
+        </Card>
+      </div>
     </div>
   );
 }
