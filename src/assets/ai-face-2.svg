@@ -1,0 +1,19 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="40" y1="70" x2="280" y2="260" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ECE0B3"/>
+      <stop offset="1" stop-color="#8B6C18"/>
+    </linearGradient>
+    <radialGradient id="g2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 160) rotate(0) scale(95 95)">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="14" y="14" width="292" height="292" rx="40" fill="#0A0F16" stroke="#B08A23" stroke-width="4"/>
+  <path d="M90 70C100 40 150 24 190 40C230 56 256 98 240 132C220 180 180 226 130 228C80 230 66 188 78 134C82 114 84 90 90 70Z" fill="url(#g1)"/>
+  <circle cx="129" cy="117" r="18" fill="#171115"/>
+  <circle cx="190" cy="125" r="18" fill="#171115"/>
+  <path d="M123 160C136 172 164 176 179 164" stroke="#1C1510" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="160" cy="100" r="38" fill="url(#g2)" opacity="0.55"/>
+  <path d="M68 230C88 215 132 218 165 225C198 232 246 222 260 248" stroke="#F7E5B0" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+</svg>

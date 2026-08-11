@@ -13,11 +13,13 @@
 .usss .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
 .usss body, .usss html{margin:0;padding:0}
 .usss .goldline{height:2px;background:linear-gradient(90deg,transparent,var(--gold-dk) 15%,var(--gold-lt) 50%,var(--gold-dk) 85%,transparent)}
-.usss .masthead{padding:30px 0 0;text-align:center}
-.usss .crest{width:62px;height:62px;margin:0 auto;border:1px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:linear-gradient(180deg,rgba(201,162,39,.14),transparent);box-shadow:0 0 0 4px rgba(201,162,39,.06), inset 0 1px 0 rgba(255,255,255,.08)}
+.usss .masthead{padding:40px 0 0;text-align:center;position:relative}
+.usss .hero{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;margin-top:8px}
+.usss .crest{width:84px;height:84px;margin:0 auto;border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;padding:10px;background:linear-gradient(180deg,rgba(201,162,39,.22),rgba(20,18,15,.2));box-shadow:0 0 0 4px rgba(201,162,39,.08), inset 0 2px 0 rgba(255,255,255,.12);border-radius:24px}
+.usss .crest img{width:100%;height:100%;object-fit:contain;display:block}
 .usss .crest .star{color:var(--gold-lt);font-size:13px;line-height:1}
 .usss .crest .abbr{font-family:'Marcellus',Georgia,serif;font-size:14px;letter-spacing:.14em;color:var(--gold-lt);line-height:1}
-.usss .brand{font-family:'Marcellus',Georgia,serif;font-size:26px;letter-spacing:.30em;margin:16px 0 0;text-transform:uppercase;background:linear-gradient(180deg,#FFF7E0,#C9A227 75%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.usss .brand{font-family:'Marcellus',Georgia,serif;font-size:36px;letter-spacing:.30em;margin:0;text-transform:uppercase;background:linear-gradient(180deg,#FFF7E0,#C9A227 75%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .usss .sub{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.34em;color:var(--faint);text-transform:uppercase;margin-top:10px}
 .usss .divider{display:flex;align-items:center;gap:14px;margin:18px 0 0}
 .usss .divider::before,.usss .divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line))}
@@ -31,7 +33,7 @@
 .usss .live{color:var(--ok)}.usss .live.err{color:var(--bad)}
 .usss main{padding:28px 0 56px;animation:rise .5s ease both}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.usss .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 12px 30px -18px rgba(0,0,0,.9)}
+.usss .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 12px 30px -18px rgba(0,0,0,.9)}
 .usss .card-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;border-bottom:1px solid var(--hair)}
 .usss .card-hd h2{margin:0;font-family:'Marcellus',Georgia,serif;font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-lt)}
 .usss .card-bd{padding:18px}
@@ -61,7 +63,7 @@
 .usss .btn.bad:hover{background:#2A1119;border-color:var(--bad)}
 .usss .btn.quiet{border-color:transparent;background:transparent}
 .usss .btn:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
-.usss .input{width:100%;padding:10px 12px;background:#05070A;border:1px solid var(--line);color:var(--txt);font-family:var(--ui);font-size:13px;transition:border-color .18s}
+.usss .input{width:100%;padding:10px 12px;background:#05070A;border:1px solid var(--line);border-radius:12px;color:var(--txt);font-family:var(--ui);font-size:13px;transition:border-color .18s}
 .usss .input::placeholder{color:#454E5E}
 .usss .input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,162,39,.10)}
 .usss .field{display:block}.usss .field>.lbl{margin-bottom:6px;display:block}
@@ -101,7 +103,7 @@
 .usss .cnt{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--warn);line-height:1}
 .usss .veil{position:fixed;inset:0;background:rgba(2,3,5,.82);backdrop-filter:blur(3px);z-index:60;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:24px;animation:fade .2s ease both}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-.usss .sheet{width:100%;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);box-shadow:0 40px 80px -30px #000;animation:rise .3s ease both;margin:16px 0}
+.usss .sheet{width:100%;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:20px;box-shadow:0 40px 80px -30px #000;animation:rise .3s ease both;margin:16px 0}
 .usss .sheet-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:18px 22px;border-bottom:1px solid var(--hair)}
 .usss .sheet-hd h3{margin:0;font-family:'Marcellus',Georgia,serif;font-size:19px;letter-spacing:.1em}
 .usss .sheet-bd{padding:22px}
@@ -124,8 +126,10 @@
 .usss footer{border-top:1px solid var(--hair);padding:20px 0;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;color:#3E4655;text-transform:uppercase}
 .usss .loc-grid{display:grid;gap:18px;grid-template-columns:1fr}
 @media(min-width:760px){.usss .loc-grid{grid-template-columns:1fr 1fr}}
-.usss .loc-card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);overflow:hidden}
-.usss .loc-img{height:150px;display:flex;align-items:center;justify-content:center;padding:14px 26px;background:radial-gradient(560px 200px at 50% -20%,rgba(201,162,39,.14),transparent 70%),#05070A;border-bottom:1px solid var(--hair)}
+.usss .loc-card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);overflow:hidden;border-radius:20px;box-shadow:0 20px 45px -24px rgba(0,0,0,.65);transition:transform .2s,box-shadow .2s}
+.usss .loc-card:hover{transform:translateY(-3px);box-shadow:0 26px 55px -22px rgba(0,0,0,.75)}
+.usss .loc-img{height:170px;display:flex;align-items:center;justify-content:center;padding:14px 26px;background:radial-gradient(560px 200px at 50% -20%,rgba(201,162,39,.18),transparent 70%),#05070A;border-bottom:1px solid var(--hair)}
+.usss .loc-img img{max-width:100%;max-height:100%;border-radius:16px;}
 .usss .loc-bd{padding:18px}
 .usss .diamond.off{background:var(--line)}
 @media(prefers-reduced-motion:reduce){.usss *{animation:none!important;transition:none!important}}

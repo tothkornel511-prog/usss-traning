@@ -1,4 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import badgeUrl from './assets/elite-badge.svg';
+import face1 from './assets/ai-face-1.svg';
+import face2 from './assets/ai-face-2.svg';
+import face3 from './assets/ai-face-3.svg';
 
 const STORE_KEY = 'usss:kepzes:v2';
 const PROBAIDO_NAP = 14;
@@ -97,18 +101,37 @@ const MODULOK = (() => {
   return ki;
 })();
 const MODUL_KOD = Object.fromEntries(MODULOK.map((m) => [m.kod, m]));
+
+const VEDETT_HELYEK = [
+  { id: 'v1', nev: 'Óriáskapu Bunker', zona: 'Külső 12', statusz: 'szigorított', ellenorzes: '2026-08-10', kritikus: 'Haladéktalan lezárás, belső ellenőrzés', kep: face1 },
+  { id: 'v2', nev: 'Légi Radarállomás', zona: 'Északi perem', statusz: 'védett', ellenorzes: '2026-08-09', kritikus: 'Behatolás-ellenes készenlét aktív', kep: face2 },
+  { id: 'v3', nev: 'Titkos Szakértői Szektor', zona: 'Belső 5', statusz: 'magas figyelem', ellenorzes: '2026-08-08', kritikus: 'Tűzoltás és biztonsági csapat készenlétben', kep: face3 },
+];
+
 const EMPTY = { people: [], records: [], ervenyesseg: {} };
 
 const KEZDETI = {
   ervenyesseg: { F: 12, F1: 12, G1: 12, E: 24 },
   people: [
-    { id: 'p1', nev: 'Günther Grün', jelveny: 'USSS-004', belepes: '2026-06-25', megj: 'Prémium elit' },
-    { id: 'p2', nev: 'Dr. Rick Deckard', jelveny: 'USSS-011', belepes: '2026-07-10', megj: 'Oktatási jegyzőkönyv' },
-    { id: 'p3', nev: 'Brian Sorrento', jelveny: 'USSS-021', belepes: '2026-07-20', megj: '' },
-    { id: 'p4', nev: 'Alexander Freamen', jelveny: 'USSS-032', belepes: '2026-07-26', megj: '' },
-    { id: 'p5', nev: 'Titus Long', jelveny: 'USSS-038', belepes: '2026-08-01', megj: '' },
-    { id: 'p6', nev: 'Oliver Smith', jelveny: 'USSS-047', belepes: '2026-08-05', megj: '' },
-    { id: 'p7', nev: 'Tyron Wolf', jelveny: 'USSS-055', belepes: '2026-08-09', megj: '' },
+    { id: 'p1', nev: 'Dr.Lakatos László', jelveny: 'USSS-109', belepes: '2026-08-01', megj: '' },
+    { id: 'p2', nev: 'Dr.Hajas Ricsi', jelveny: 'USSS-96', belepes: '2026-08-01', megj: '' },
+    { id: 'p3', nev: 'Dominic Hayes', jelveny: 'USSS-118', belepes: '2026-08-01', megj: 'Újonc' },
+    { id: 'p4', nev: 'Christoph Norbert Kleinemann', jelveny: 'USSS-98', belepes: '2026-08-01', megj: '' },
+    { id: 'p5', nev: 'Henry Hudson', jelveny: 'USSS-50', belepes: '2026-08-01', megj: '' },
+    { id: 'p6', nev: 'Valentino Rossi', jelveny: 'USSS-123', belepes: '2026-08-01', megj: 'Újonc' },
+    { id: 'p7', nev: 'Michel Smith', jelveny: 'USSS-106', belepes: '2026-08-01', megj: '' },
+    { id: 'p8', nev: 'Matthew Willams', jelveny: 'USSS-107', belepes: '2026-08-01', megj: '' },
+    { id: 'p9', nev: 'John Smith', jelveny: 'USSS-92', belepes: '2026-08-01', megj: '' },
+    { id: 'p10', nev: 'Jensen Walker', jelveny: 'USSS-124', belepes: '2026-08-01', megj: 'Újonc' },
+    { id: 'p11', nev: 'Harvey Ross', jelveny: 'USSS-111', belepes: '2026-08-01', megj: '' },
+    { id: 'p12', nev: 'Harrelson Grant', jelveny: 'USSS-120', belepes: '2026-08-01', megj: 'Újonc' },
+    { id: 'p13', nev: 'Günther Grün', jelveny: 'USSS-8', belepes: '2026-08-01', megj: '' },
+    { id: 'p14', nev: 'Dr. Rick Deckard', jelveny: 'USSS-119', belepes: '2026-08-01', megj: 'Újonc' },
+    { id: 'p15', nev: 'Brian Sorrento', jelveny: 'USSS-112', belepes: '2026-08-01', megj: '' },
+    { id: 'p16', nev: 'Alexander Freamen', jelveny: 'USSS-121', belepes: '2026-08-01', megj: 'Újonc' },
+    { id: 'p17', nev: 'Titus Long', jelveny: 'USSS-91', belepes: '2026-08-01', megj: '' },
+    { id: 'p18', nev: 'Oliver Smith', jelveny: 'USSS-80', belepes: '2026-08-01', megj: '' },
+    { id: 'p19', nev: 'Tyron Wolf', jelveny: 'USSS-004', belepes: '2026-08-01', megj: '' },
   ],
   records: [],
 };
@@ -209,7 +232,6 @@ export default function App() {
   const [q, setQ] = useState('');
   const [modal, setModal] = useState(null);
   const first = useRef(true);
-  const exportRef = useRef(null);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORE_KEY);
@@ -309,6 +331,7 @@ export default function App() {
     ['tabla', 'Státusztábla'],
     ['modulok', 'Modulok'],
     ['jelentes', 'Jelentések'],
+    ['vedett', 'Védett helyek'],
     ['sugo', 'Súgó'],
   ];
   const aktiv = modal?.type === 'kartya' ? data.people.find((p) => p.id === modal.id) : null;
@@ -344,17 +367,32 @@ export default function App() {
     }
   };
 
+  const downloadCsv = () => {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'usss-jelentes.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="usss">
       <div className="goldline" />
       <header>
         <div className="wrap masthead">
-          <div className="crest">
-            <span className="star">★</span>
-            <span className="abbr">USSS</span>
+          <div className="hero">
+            <div className="crest">
+              <img src={badgeUrl} alt="USSS Embléma" />
+            </div>
+            <div>
+              <h1 className="brand">USSS Elite Training HQ</h1>
+              <div className="sub">Oktatási jegyzőkönyv, védett helyek felügyelete és prémium státuszkezelés</div>
+            </div>
           </div>
-          <h1 className="brand">USSS Elite Training HQ</h1>
-          <div className="sub">Oktatási nyilvántartás, jelentés és prémium státuszkezelés</div>
           <div className="divider"><span className="diamond" /></div>
         </div>
         <div className="wrap">
@@ -382,7 +420,8 @@ export default function App() {
         )}
         {tab === 'tabla' && <Tabla data={data} allapot={allapot} recMap={recMap} onCell={setRecord} onOpen={nyit} />}
         {tab === 'modulok' && <ModulLista data={data} recMap={recMap} onErveny={setErveny} />}
-        {tab === 'jelentes' && <Jelentes csv={csv} onCopy={copyCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
+        {tab === 'jelentes' && <Jelentes csv={csv} onCopy={copyCsv} onDownload={downloadCsv} onReset={torolAllat} onDemo={() => setData(KEZDETI)} />}
+        {tab === 'vedett' && <Vedett sites={VEDETT_HELYEK} />}
         {tab === 'sugo' && <Sugo />}
       </main>
 
@@ -761,24 +800,54 @@ function ModulLista({ data, recMap, onErveny }) {
   );
 }
 
-function Jelentes({ csv, onCopy, onReset, onDemo }) {
+function Jelentes({ csv, onCopy, onDownload, onReset, onDemo }) {
   return (
     <div className="stack">
       <Card title="Oktatási jegyzőkönyv és jelentés export">
         <p className="note">A kimutatás személyenként adja vissza a teljesítést, lejáratokat és az érvényességi státuszt. Használd Excelben vagy riportként.</p>
         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
           <Btn kind="gold" onClick={onCopy}>CSV másolása</Btn>
-          <Btn onClick={() => navigator.clipboard.writeText(csv).then(() => alert('Jelentés kimásolva!')).catch(() => alert('Nem sikerült kimásolni.'))}>Jelentés vágólapra</Btn>
+          <Btn onClick={onDownload}>CSV letöltése</Btn>
           <Btn kind="quiet" onClick={onDemo}>Példaállomány betöltése</Btn>
           <Btn kind="bad" onClick={onReset}>Teljes állomány törlése</Btn>
         </div>
       </Card>
       <Card title="CSV adatforrás">
-        <textarea ref={exportRef} readOnly rows="10" className="input mono" style={{ marginTop: 14, fontSize: 11 }} value={csv} />
+        <textarea readOnly rows="10" className="input mono" style={{ marginTop: 14, fontSize: 11, minHeight: 250 }} value={csv} />
       </Card>
       <Card title="GitHub és dokumentáció">
         <p className="note">A projekt lokálisan tárolja az adatokat, és a `src/App.jsx` alapján bővíthető egyedi jelentésekkel és oktatási jegyzőkönyvekkel.</p>
       </Card>
+    </div>
+  );
+}
+
+function Vedett({ sites }) {
+  return (
+    <div className="stack">
+      <Card title="Védett helyek felügyelete">
+        <p className="note">A védett helyek gyors áttekintése. Minden helyszínhez AI-stílusú grafika és biztonsági állapot tartozik.</p>
+      </Card>
+      <div className="loc-grid">
+        {sites.map((site) => (
+          <article key={site.id} className="loc-card">
+            <div className="loc-img">
+              <img src={site.kep} alt={site.nev} />
+            </div>
+            <div className="loc-bd">
+              <div className="card-hd" style={{ padding: 0, borderBottom: 'none' }}>
+                <h2>{site.nev}</h2>
+                <Chip szin="var(--gold)">{site.statusz.toUpperCase()}</Chip>
+              </div>
+              <div className="row" style={{ justifyContent: 'space-between', marginTop: 14 }}>
+                <span className="mono faint">Zóna: {site.zona}</span>
+                <span className="mono faint">Utolsó ellenőrzés: {fmt(site.ellenorzes)}</span>
+              </div>
+              <p className="note" style={{ marginTop: 12 }}>{site.kritikus}</p>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
@@ -790,6 +859,7 @@ function Sugo() {
     ['Karton', 'Névre kattintva aprólékosan láthatod, ki mit végzett el, mikor történt a képzés, ki volt az oktató és van-e lejárat.'],
     ['Rang', 'A rang automatikusan frissül. Csak a teljesen érvényes modulok számítanak, a lejárt modul visszavethet egy szinttel.'],
     ['Lejárat', 'A Modulok fül alatt állíthatod be, hány hónapig érvényes egy modul. 0 = soha nem jár le.'],
+    ['Védett helyek', 'A Védett helyek fül új áttekintést ad a biztonsági zónákról AI-szerű képekkel, állapotokkal és helyszíni figyelésekkel.'],
     ['Oktatási jegyzőkönyv', 'A Jelentések fülön kimásolható CSV jelentés készül, amely hasznos oktatási jegyzőkönyvként és adminisztrációs anyagként.'],
   ];
   return (
